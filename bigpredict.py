@@ -48,6 +48,7 @@ X = cv.fit_transform(complete_ds).toarray()
 from sklearn.cross_validation import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(X, y_req, test_size=1/24)
 
+probs = clss.predict_proba(X_test)
 
 pred = clss.predict(X_test)
 
@@ -61,3 +62,24 @@ for i in range(0, len(pred)):
 
 print("Correct: " + str(corr))
 print("Wrong: " + str(wrng))
+
+
+
+###################################################
+essay = ""
+with open("profile.txt") as f:
+    essay = f.read()
+
+essay = re.sub('a-zA-Z', ' ', essay)
+essay = essay.lower()
+essay = essay.split()
+ps = PorterStemmer()
+wnl = WordNetLemmatizer()
+
+essay = [wnl.lemmatize(word) if wnl.lemmatize(word).endswith('e') else ps.stem(word) for word in essay if not word in set(stopwords.words())]
+essay = ' '.join(essay)
+
+X = cv.transform([essay]).toarray()
+
+predd = clss.predict(X)
+preddd = clss.predict_proba(X)
