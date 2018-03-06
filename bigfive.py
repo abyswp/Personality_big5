@@ -9,6 +9,7 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.ensemble import RandomForestClassifier
+import pickle
 
 dataset = pd.read_csv('essays.csv', encoding='cp1252')
 indices = []
@@ -19,7 +20,7 @@ for i in range(0, len(dataset)):
 
 dataset.drop(dataset.index[indices], inplace=True)
 dataset = dataset.reset_index(drop=True)
-        
+
 all_essays = []
 
 for i in range(0, len(dataset['TEXT'])):
@@ -28,12 +29,15 @@ for i in range(0, len(dataset['TEXT'])):
     essay = essay.split()
     ps = PorterStemmer()
     wnl = WordNetLemmatizer()
-    
+
     essay = [wnl.lemmatize(word) if wnl.lemmatize(word).endswith('e') else ps.stem(word) for word in essay if not word in set(stopwords.words())]
     essay = ' '.join(essay)
     all_essays.append(essay)
-    
+
     print("Done " + str(i))
+
+with open("essaysfinal", "wb") as fp:
+    pickle.dump(all_essays, fp)
 
 complete_ds = []
 y_req = []
@@ -63,7 +67,6 @@ X_train, X_test, y_train, y_test = train_test_split(X, y_req, test_size=1/24)'''
 classifier = RandomForestClassifier(criterion='entropy')
 classifier.fit(X, y_req)
 
-import pickle
 pickle.dump(classifier, open('model.sav', 'wb'))
 
 
