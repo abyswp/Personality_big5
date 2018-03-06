@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import pandas as pd
+import pickle
 import re
 import nltk
 nltk.download('stopwords')
@@ -9,7 +9,7 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.ensemble import RandomForestClassifier
-import pickle
+import pandas as pd
 
 dataset = pd.read_csv('essays.csv', encoding='cp1252')
 indices = []
@@ -21,23 +21,8 @@ for i in range(0, len(dataset)):
 dataset.drop(dataset.index[indices], inplace=True)
 dataset = dataset.reset_index(drop=True)
 
-all_essays = []
-
-for i in range(0, len(dataset['TEXT'])):
-    essay = re.sub('a-zA-Z', ' ', dataset['TEXT'][i])
-    essay = essay.lower()
-    essay = essay.split()
-    ps = PorterStemmer()
-    wnl = WordNetLemmatizer()
-
-    essay = [wnl.lemmatize(word) if wnl.lemmatize(word).endswith('e') else ps.stem(word) for word in essay if not word in set(stopwords.words())]
-    essay = ' '.join(essay)
-    all_essays.append(essay)
-
-    print("Done " + str(i))
-
-with open("essaysfinal", "wb") as fp:
-    pickle.dump(all_essays, fp)
+clss = pickle.load(open('model.sav', 'rb'), encoding='latin1')
+all_essays = pickle.load(open('essaysfinal', 'rb'))
 
 complete_ds = []
 y_req = []
@@ -56,10 +41,23 @@ for i in range(0, len(y)):
             complete_ds.append(all_essays[i])
             y_req.append(j)
 
+
 cv = CountVectorizer()
 X = cv.fit_transform(complete_ds).toarray()
 
-classifier = RandomForestClassifier(criterion='entropy')
-classifier.fit(X, y_req)
+from sklearn.cross_validation import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y_req, test_size=1/24)
 
-pickle.dump(classifier, open('model.sav', 'wb'))
+
+pred = clss.predict(X_test)
+
+corr = 0
+wrng = 0
+for i in range(0, len(pred)):
+    if pred[i] == y_test[i]:
+        corr += 1
+    else:
+        wrng += 1
+
+print("Correct: " + str(corr))
+print("Wrong: " + str(wrng))
