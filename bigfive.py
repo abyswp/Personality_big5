@@ -6,10 +6,8 @@ import nltk
 nltk.download('stopwords')
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer, WordNetLemmatizer
-import random
 
 dataset = pd.read_csv('essays.csv', encoding='cp1252')
-
 indices = []
 
 for i in range(0, len(dataset)):
@@ -34,46 +32,44 @@ for i in range(0, len(dataset['TEXT'])):
     
     print("Done " + str(i))
 
-from sklearn.feature_extraction.text import CountVectorizer
-cv = CountVectorizer()
-X = cv.fit_transform(all_essays).toarray()
-y = dataset.iloc[:, 2:7].values
+complete_ds = []
+y_req = []
 
+y = dataset.iloc[:, 2:7].values
 for d in range(0, len(y)):
     for i in range(0, len(y[0])):
         if y[d][i] == 'y':
             y[d][i] = 1
         else:
-            y[d][i] = 0   
+            y[d][i] = 0
 
-
-y_req = []
 for i in range(0, len(y)):
-    ones = []
-    for j in range(0, 5):
-        if y[i][j]:
-            ones.append(j)
+    for j in range(0, len(y[i])):
+        if y[i][j] == 1:
+            complete_ds.append(all_essays[i])
+            y_req.append(j)
 
-    if len(ones) != 0:        
-        index = random.randrange(len(ones))
-        y_req.append(ones[index])
+from sklearn.feature_extraction.text import CountVectorizer
+cv = CountVectorizer()
+X = cv.fit_transform(complete_ds).toarray()
 
-from sklearn.cross_validation import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(X, y_req, test_size=1/24)
+
+'''from sklearn.cross_validation import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y_req, test_size=1/24)'''
 
 
 from sklearn.ensemble import RandomForestClassifier
 classifier = RandomForestClassifier(criterion='entropy')
-classifier.fit(X_train, y_train)
-
+classifier.fit(X, y_req)
 
 import pickle
 pickle.dump(classifier, open('model.sav', 'wb'))
 
 
-pred = classifier.predict_proba(X_test)
+'''pred = classifier.predict_proba(X_test)
 
 y_pred = []
+
 for i in range(0, len(pred)):
     max_p = 0
     ind = 0
@@ -83,6 +79,4 @@ for i in range(0, len(pred)):
             ind = j
     y_pred.append(ind)
 
-print(y_pred)
-# from sklearn.metrics import confusion_matrix
-# cm = confusion_matrix(y_test, y_pred)
+print(y_pred)'''
